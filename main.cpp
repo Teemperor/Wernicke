@@ -4,8 +4,84 @@
 #include <vector>
 #include <cmath>
 
+/*
+   This computes an in-place complex-to-complex FFT
+   x and y are the real and imaginary arrays of 2^m points.
+   dir =  1 gives forward transform
+   dir = -1 gives reverse transform
+*/
+short FFT(short int dir, long m, std::vector<double>& x, std::vector<double>& y)
+{
+    long n,i,i1,j,k,i2,l,l1,l2;
+    double c1,c2,tx,ty,t1,t2,u1,u2,z;
+
+    /* Calculate the number of points */
+    n = 1;
+    for (i=0;i<m;i++)
+        n *= 2;
+
+    /* Do the bit reversal */
+    i2 = n >> 1;
+    j = 0;
+    for (i=0;i<n-1;i++) {
+        if (i < j) {
+            tx = x[i];
+            ty = y[i];
+            x[i] = x[j];
+            y[i] = y[j];
+            x[j] = tx;
+            y[j] = ty;
+        }
+        k = i2;
+        while (k <= j) {
+            j -= k;
+            k >>= 1;
+        }
+        j += k;
+    }
+
+    /* Compute the FFT */
+    c1 = -1.0;
+    c2 = 0.0;
+    l2 = 1;
+    for (l=0;l<m;l++) {
+        l1 = l2;
+        l2 <<= 1;
+        u1 = 1.0;
+        u2 = 0.0;
+        for (j=0;j<l1;j++) {
+            for (i=j;i<n;i+=l2) {
+                i1 = i + l1;
+                t1 = u1 * x[i1] - u2 * y[i1];
+                t2 = u1 * y[i1] + u2 * x[i1];
+                x[i1] = x[i] - t1;
+                y[i1] = y[i] - t2;
+                x[i] += t1;
+                y[i] += t2;
+            }
+            z =  u1 * c1 - u2 * c2;
+            u2 = u1 * c2 + u2 * c1;
+            u1 = z;
+        }
+        c2 = sqrt((1.0 - c1) / 2.0);
+        if (dir == 1)
+            c2 = -c2;
+        c1 = sqrt((1.0 + c1) / 2.0);
+    }
+
+    /* Scaling for forward transform */
+    if (dir == 1) {
+        for (i=0;i<n;i++) {
+            x[i] /= n;
+            y[i] /= n;
+        }
+    }
+
+    return 1;
+}
+
 std::vector<int32_t> readPCM() {
-    std::ifstream file("/home/teemperor/Dokumente/ASE/audio/adrei01.raw");
+    std::ifstream file("/home/teemperor/Dokumente/ASE/audio/adrei02.raw");
 
     std::vector<int32_t> result;
     result.reserve(100000);
@@ -176,10 +252,26 @@ int main(void)
         } else {
             isSpeaking.push_back(0);
         }
-
-        std::cout << "Speaking/Silence probability: " << probabilitySpeaking << " " << probabilitySilence << std::endl;
     }
 
+    unsigned fftWindowSizePower = 8;
+    unsigned fftWindowSize = 1u << fftWindowSizePower;
+    std::vector<double> realPart, imaginaryPart;
+    realPart.resize(fftWindowSize, 0);
+    imaginaryPart.resize(fftWindowSize, 0);
+
+    for (uint64_t i = 0; i < (int) result.size() - fftWindowSize; i += fftWindowSize) {
+
+        for (uint64_t j = i; j < i + fftWindowSize; j++) {
+            realPart[j - i] = result[j];
+        }
+
+        for (std::uint64_t j = 0; j < fftWindowSize; j++) {
+            imaginaryPart[j] = 0;
+        }
+
+        FFT(1, fftWindowSizePower, realPart, imaginaryPart);
+    }
 
     {
         std::ofstream myfile;
@@ -210,6 +302,7 @@ int main(void)
         }
         myfile.close();
     }
+
 
     system("gnuplot /home/teemperor/Dokumente/ASE/ubung3/gnuplot.gp");
 
