@@ -81,7 +81,7 @@ short FFT(short int dir, long m, std::vector<double>& x, std::vector<double>& y)
 }
 
 std::vector<int32_t> readPCM() {
-    std::ifstream file("/home/teemperor/Dokumente/ASE/audio/adrei02.raw");
+    std::ifstream file("adrei01.raw");
 
     std::vector<int32_t> result;
     result.reserve(100000);
@@ -206,7 +206,7 @@ int main(void)
     auto energy = calculateEnergy(result, 160, 10);
     {
         std::ofstream myfile;
-        myfile.open ("/home/teemperor/Dokumente/ASE/ubung3/amplituden.dat");
+        myfile.open ("amplituden.dat");
 
         for(auto i : result) {
             myfile << i << "\n";
@@ -215,7 +215,7 @@ int main(void)
     }
     {
         std::ofstream myfile;
-        myfile.open ("/home/teemperor/Dokumente/ASE/ubung3/energy.dat");
+        myfile.open ("energy.dat");
 
         for(auto i : energy) {
             myfile << i << "\n";
@@ -275,7 +275,7 @@ int main(void)
 
     {
         std::ofstream myfile;
-        myfile.open ("/home/teemperor/Dokumente/ASE/ubung3/isSpeaking.dat");
+        myfile.open ("isSpeaking.dat");
 
         for(auto i : isSpeaking) {
             myfile << i << "\n";
@@ -285,7 +285,7 @@ int main(void)
 
     {
         std::ofstream myfile;
-        myfile.open ("/home/teemperor/Dokumente/ASE/ubung3/silenceProb.dat");
+        myfile.open ("silenceProb.dat");
 
         for(auto i : silenceProb) {
             myfile << i << "\n";
@@ -295,7 +295,7 @@ int main(void)
 
     {
         std::ofstream myfile;
-        myfile.open ("/home/teemperor/Dokumente/ASE/ubung3/speakingProb.dat");
+        myfile.open ("speakingProb.dat");
 
         for(auto i : speakingProb) {
             myfile << i << "\n";
@@ -304,7 +304,7 @@ int main(void)
     }
 
 
-    system("gnuplot /home/teemperor/Dokumente/ASE/ubung3/gnuplot.gp");
+    system("gnuplot gnuplot.gp");
 
     return 0;
 }
