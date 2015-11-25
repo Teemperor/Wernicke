@@ -9,8 +9,10 @@ int main() {
 
     SilenceClassificator classificator;
 
+    RecordPart dreiSoundPart(dreiSound, 0, dreiSound->altitudes().size());
+    RecordPart silencePart(dreiSound, 0, silence->altitudes().size());
 
-    std::cout << dreiSound->averageEnergy() << std::endl;
-    std::cout << silence->averageEnergy() << std::endl;
+    std::cout << dreiSoundPart.averageEnergy() << std::endl;
+    std::cout << silencePart.averageEnergy() << std::endl;
 
 }

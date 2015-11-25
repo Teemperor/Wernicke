@@ -6,7 +6,7 @@
 typedef float SAMPLE;
 #define SAMPLE_SILENCE  (0.0f)
 
-int Recorder::recordCallback( const void *inputBuffer, void *outputBuffer,
+int Recorder::recordCallback(const void *inputBuffer, void *outputBuffer,
                            unsigned long framesPerBuffer,
                            const PaStreamCallbackTimeInfo* timeInfo,
                            PaStreamCallbackFlags statusFlags,
@@ -16,30 +16,22 @@ int Recorder::recordCallback( const void *inputBuffer, void *outputBuffer,
     const SAMPLE* input = (const SAMPLE*) inputBuffer;
 
     std::vector<double> buffer;
-    buffer.resize(framesPerBuffer);
+    buffer.reserve(framesPerBuffer);
 
-    for (std::size_t i = 0; i < framesPerBuffer; i++) {
-        buffer[i] = input[i];
+    for (std::size_t i = 0; i < framesPerBuffer * sizeof(SAMPLE); i++) {
+        buffer.push_back(input[i]);
     }
 
     data->dataSegments_.push_back(buffer);
-
-    std::cout << framesPerBuffer << std::endl;
 
     return paContinue; // paComplete;
 }
 
 void Recorder::record() {
+    if (recording)
+        return;
+    recording = true;
 
-    /*data.maxFrameIndex = totalFrames = seconds * sampleRate;
-    data.frameIndex = 0;
-    numSamples = totalFrames;
-    numBytes = numSamples * sizeof(SAMPLE);
-
-    data.recordedSamples = new SAMPLE[numBytes];
-    for(int i=0; i<numSamples; i++ )
-        data.recordedSamples[i] = 0;
-*/
     int err;
 
     if (Pa_Initialize() != paNoError )
@@ -52,7 +44,7 @@ void Recorder::record() {
 
     inputParameters.channelCount = 1;                    /* mono input */
     inputParameters.sampleFormat = PA_SAMPLE_TYPE;
-    inputParameters.suggestedLatency = Pa_GetDeviceInfo( inputParameters.device )->defaultLowInputLatency;
+    inputParameters.suggestedLatency = Pa_GetDeviceInfo( inputParameters.device )->defaultHighInputLatency;
     inputParameters.hostApiSpecificStreamInfo = NULL;
 
     /* Record some audio. -------------------------------------------- */
@@ -77,15 +69,18 @@ Recorder::Recorder(unsigned sampleRate) {
 }
 
 Recorder::~Recorder() {
-    int err;
-    //while (( err = Pa_IsStreamActive( stream )) == 1 )
-    //{
-    //    Pa_Sleep(1000);
-    //}
-    //if (err < 0) throw std::domain_error("Error in Pa_IsStreamActive");
 
-    err = Pa_CloseStream (stream);
-    if (err != paNoError) throw std::domain_error("Error in Pa_CloseStream");
+    if (recording) {
+        int err;
+        //while (( err = Pa_IsStreamActive( stream )) == 1 )
+        //{
+        //    Pa_Sleep(1000);
+        //}
+        //if (err < 0) throw std::domain_error("Error in Pa_IsStreamActive");
 
-    Pa_Terminate();
+        err = Pa_CloseStream (stream);
+        if (err != paNoError) throw std::domain_error("Error in Pa_CloseStream");
+
+        Pa_Terminate();
+    }
 }

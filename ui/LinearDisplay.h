@@ -1,5 +1,5 @@
-#ifndef WERNICKE_RECORDDISPLAY_H
-#define WERNICKE_RECORDDISPLAY_H
+#ifndef WERNICKE_LINEARDISPLAY_H
+#define WERNICKE_LINEARDISPLAY_H
 
 #include <QtWidgets>
 #include <Record.h>
@@ -10,12 +10,16 @@
 
 class LinearDisplay : public QWidget {
 
-    std::vector<double> data_;
     QCustomPlot* customPlot = nullptr;
     QPen pen;
 
+    std::string graphName_;
+    uint64_t limit_;
+    uint64_t pos_;
+
+
 public:
-    LinearDisplay() {
+    LinearDisplay(std::string name, uint64_t limit = 64000) : graphName_(name), limit_(limit), pos_(limit) {
        QVBoxLayout* layout = new QVBoxLayout();
 
        setLayout(layout);
@@ -40,46 +44,87 @@ public:
        // make top right axes clones of bottom left axes. Looks prettier:
        customPlot->axisRect()->setupFullAxesBox();
 
-       customPlot->setInteraction(QCP::iRangeDrag, true);
-       customPlot->setInteraction(QCP::iRangeZoom, true);
-
        layout->addWidget(customPlot);
+
+       recreateGraph();
+    }
+
+    void addOverwriteData(const std::vector<double>& data, double factor = 1) {
+        pos_ = 0;
+        customPlot->graph(0)->clearData();
+        for (double value : data) {
+            customPlot->graph(0)->addData(pos_++, value * factor);
+        }
+
+        customPlot->graph(0)->keyAxis()->rescale(false);
+        customPlot->replot();
     }
 
     void addData(const std::vector<double>& data) {
-        for (double value : data)
-            data_.push_back(value);
-        updateDisplay();
-    }
-
-    void updateDisplay() {
-        customPlot->clearGraphs();
-
-        unsigned xFactor = 100;
-
-        // generate ideal sinc curve data and some randomly perturbed data for scatter plot:
-        QVector<double> xContinious(data_.size()), data(data_.size());
-        for (int i = 0; i < data_.size(); i++)
-        {
-          xContinious[i] = i * xFactor;
-          data[i] = data_[i];
+        for (double value : data) {
+            customPlot->graph(0)->addData(pos_++, value);
         }
 
+        if (pos_ > limit_) {
+            customPlot->graph(0)->removeDataBefore(pos_ - limit_);
+        }
+
+        customPlot->graph(0)->keyAxis()->rescale(false);
+        customPlot->replot();
+    }
+
+    void updateViewport() {
+        customPlot->rescaleAxes();
+        customPlot->replot();
+    }
+
+    void addData(const std::list<std::vector<double>>& dataSets) {
+
+        for (auto& data : dataSets) {
+            for (double value : data) {
+                customPlot->graph(0)->addData(pos_++, value);
+            }
+        }
+
+        if (pos_ > limit_) {
+            customPlot->graph(0)->removeDataBefore(pos_ - limit_);
+        }
+
+        customPlot->graph(0)->keyAxis()->rescale(false);
+        customPlot->replot();
+    }
+
+    void recreateGraph() {
+        customPlot->clearGraphs();
+
         // pass data to graphs and let QCustomPlot determine the axes ranges so the whole thing is visible:
+        QVector<double> xContinious(limit_), data(limit_);
+
+        for (std::size_t i = 0; i < limit_; i++) {
+            xContinious[i] = i;
+            data[i] = 0;
+        }
 
         customPlot->addGraph();
-        customPlot->graph(0)->setName("Altitudes");
+        customPlot->graph(0)->setName(graphName_.c_str());
         customPlot->graph(0)->setPen(QPen(Qt::blue));
         customPlot->graph(0)->setLineStyle(QCPGraph::lsLine);
         customPlot->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDot, 2));
         customPlot->graph(0)->setData(xContinious, data);
-        customPlot->graph(0)->rescaleAxes();
-        customPlot->graph(0)->rescaleAxes(true);
 
         customPlot->replot();
+    }
+
+    void setValueRange(double lower, double upper) {
+        customPlot->graph(0)->valueAxis()->setRange(lower, upper);
+    }
+
+    void enableNavigation() {
+        customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectAxes |
+                                        QCP::iSelectLegend | QCP::iSelectPlottables);
     }
 
 };
 
 
-#endif //WERNICKE_RECORDDISPLAY_H
+#endif //WERNICKE_LINEARDISPLAY_H

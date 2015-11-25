@@ -6,7 +6,7 @@ INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIR} )
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-set(SOURCE_FILES src/WernickeMachine.cpp src/WernickeMachine.h src/Record.cpp src/Record.h src/NormalDistribution.cpp src/NormalDistribution.h src/Tools.h src/SilenceClassificator.cpp src/SilenceClassificator.h src/Range.cpp src/Range.h tests/RecordTest.cpp src/Criterion.cpp src/Criterion.h)
+set(SOURCE_FILES src/WernickeMachine.cpp src/WernickeMachine.h src/Record.cpp src/Record.h src/NormalDistribution.cpp src/NormalDistribution.h src/Tools.h src/SilenceClassificator.cpp src/SilenceClassificator.h src/Range.cpp src/Range.h tests/RecordTest.cpp src/Criterion.cpp src/Criterion.h src/RecordPart.cpp src/RecordPart.h)
 
 add_library(wernicke ${SOURCE_FILES})
 TARGET_LINK_LIBRARIES(wernicke ${Boost_LIBRARIES} )

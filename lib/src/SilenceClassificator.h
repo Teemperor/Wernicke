@@ -5,6 +5,7 @@
 
 #include "NormalDistribution.h"
 #include "Record.h"
+#include "RecordPart.h"
 
 class SilenceClassificator {
 
@@ -12,7 +13,7 @@ class SilenceClassificator {
     NormalDistribution speech_;
 
 public:
-    SilenceClassificator(Record& silenceSample, Record& speechSample)
+    SilenceClassificator(RecordPart& silenceSample, RecordPart& speechSample)
             : silence_(silenceSample.averageEnergy(), silenceSample.energyVariance()),
               speech_(speechSample.averageEnergy(), speechSample.energyVariance())
     {
